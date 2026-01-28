@@ -1,0 +1,1831 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Super Mario Bros - 5 Levels</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background: #000;
+            font-family: 'Press Start 2P', 'Courier New', monospace;
+            overflow: hidden;
+            margin: 0;
+            padding: 20px;
+        }
+
+        #gameContainer {
+            position: relative;
+            width: 95vw;
+            max-width: 1200px;
+            height: 70vh;
+            min-height: 500px;
+            max-height: 800px;
+            background: linear-gradient(to bottom, #5c94fc 0%, #5c94fc 82%, #c84c0c 82%, #c84c0c 100%);
+            border: 4px solid #ffd700;
+            overflow: hidden;
+            box-shadow: 0 10px 40px rgba(255,215,0,0.5);
+        }
+
+        #mario {
+            position: absolute;
+            width: 32px;
+            height: 40px;
+            bottom: 85px;
+            left: 50px;
+            z-index: 5;
+            background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 40"><rect fill="%23ff0000" x="8" y="0" width="16" height="8"/><rect fill="%23ffa500" x="4" y="8" width="24" height="8"/><circle fill="%23000" cx="12" cy="14" r="2"/><circle fill="%23fff" cx="11.5" cy="13.5" r="1"/><circle fill="%23000" cx="20" cy="14" r="2"/><circle fill="%23fff" cx="19.5" cy="13.5" r="1"/><rect fill="%23ffd700" x="0" y="16" width="8" height="8"/><rect fill="%23ffd700" x="24" y="16" width="8" height="8"/><rect fill="%23ffa500" x="8" y="16" width="16" height="8"/><ellipse fill="%23ff6b6b" cx="16" cy="20" rx="3" ry="2"/><rect fill="%23ffd700" x="4" y="24" width="24" height="8"/><rect fill="%230000ff" x="8" y="32" width="16" height="8"/></svg>');
+            background-size: contain;
+            background-repeat: no-repeat;
+            image-rendering: pixelated;
+        }
+
+        .mario-super {
+            height: 48px !important;
+        }
+
+        .ground {
+            position: absolute;
+            bottom: 0;
+            width: 100%;
+            height: 85px;
+            background: #c84c0c;
+            border-top: 4px solid #8b3a0a;
+        }
+
+        .platform {
+            position: absolute;
+            background: linear-gradient(135deg, #8b4513 0%, #a0522d 50%, #8b4513 100%);
+            border: 3px solid #654321;
+            border-radius: 3px;
+            box-shadow: inset 0 2px 5px rgba(255,255,255,0.3);
+        }
+
+        .brick {
+            position: absolute;
+            width: 32px;
+            height: 32px;
+            background: #d2691e;
+            border: 2px solid #8b4513;
+            box-shadow: inset 2px 2px 3px rgba(255,255,255,0.3), inset -2px -2px 3px rgba(0,0,0,0.3);
+        }
+
+        .brick::before,
+        .brick::after {
+            content: '';
+            position: absolute;
+            background: #8b4513;
+        }
+
+        .brick::before {
+            width: 100%;
+            height: 2px;
+            top: 50%;
+            left: 0;
+        }
+
+        .brick::after {
+            width: 2px;
+            height: 100%;
+            left: 50%;
+            top: 0;
+        }
+
+        .question-box {
+            position: absolute;
+            width: 32px;
+            height: 32px;
+            background: #ffd700;
+            border: 2px solid #ff8c00;
+            border-radius: 3px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            font-weight: bold;
+            color: #8b4513;
+            animation: shimmer 1.5s infinite;
+            box-shadow: inset 2px 2px 3px rgba(255,255,255,0.4), 0 0 15px rgba(255,215,0,0.5);
+        }
+
+        .question-box.used {
+            background: #8b8b8b;
+            border-color: #555;
+            animation: none;
+            box-shadow: inset 2px 2px 3px rgba(0,0,0,0.3);
+        }
+
+        @keyframes shimmer {
+            0%, 100% { box-shadow: inset 2px 2px 3px rgba(255,255,255,0.4), 0 0 10px rgba(255,215,0,0.5); }
+            50% { box-shadow: inset 2px 2px 3px rgba(255,255,255,0.4), 0 0 25px rgba(255,215,0,0.8); }
+        }
+
+        .coin {
+            position: absolute;
+            width: 20px;
+            height: 28px;
+            background: linear-gradient(135deg, #ffd700 0%, #ffed4e 50%, #ffd700 100%);
+            border: 2px solid #ff8c00;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+            font-weight: bold;
+            color: #ff8c00;
+            animation: coinSpin 1.5s linear infinite, coinFloat 2s ease-in-out infinite;
+            box-shadow: 0 0 10px rgba(255,215,0,0.6);
+        }
+
+        @keyframes coinSpin {
+            0% { transform: scaleX(1) translateY(0); }
+            25% { transform: scaleX(0.5) translateY(-3px); }
+            50% { transform: scaleX(0.1) translateY(0); }
+            75% { transform: scaleX(0.5) translateY(-3px); }
+            100% { transform: scaleX(1) translateY(0); }
+        }
+
+        @keyframes coinFloat {
+            0%, 100% { transform: translateY(0px) rotate(0deg); }
+            50% { transform: translateY(-8px) rotate(180deg); }
+        }
+
+        .enemy {
+            position: absolute;
+            width: 32px;
+            height: 32px;
+            bottom: 85px;
+        }
+
+        .goomba {
+            background: linear-gradient(to bottom, #8b4513 0%, #654321 100%);
+            border-radius: 50% 50% 0 0;
+            border: 2px solid #3d2817;
+            box-shadow: inset 0 -5px 10px rgba(0,0,0,0.3);
+        }
+
+        .goomba::before {
+            content: '';
+            position: absolute;
+            width: 7px;
+            height: 7px;
+            background: white;
+            border: 1px solid #000;
+            border-radius: 50%;
+            top: 8px;
+            left: 6px;
+            box-shadow: 14px 0 0 white, 14px 0 0 1px #000;
+        }
+
+        .goomba::after {
+            content: '';
+            position: absolute;
+            width: 8px;
+            height: 3px;
+            background: #3d2817;
+            bottom: -5px;
+            left: 3px;
+            box-shadow: 12px 0 0 #3d2817;
+        }
+
+        .koopa {
+            background: linear-gradient(135deg, #2ecc71 0%, #27ae60 50%, #229954 100%);
+            border-radius: 50%;
+            border: 3px solid #1e8449;
+            box-shadow: inset 0 0 10px rgba(0,0,0,0.3);
+        }
+
+        .koopa::before {
+            content: '';
+            position: absolute;
+            width: 20px;
+            height: 20px;
+            background: #f4d03f;
+            border: 2px solid #d4ac0d;
+            border-radius: 50%;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+        }
+
+        .pipe {
+            position: absolute;
+            background: linear-gradient(to right, #2ecc71 0%, #27ae60 50%, #2ecc71 100%);
+            border: 3px solid #1e8449;
+            border-radius: 5px 5px 0 0;
+            bottom: 85px;
+            box-shadow: inset 0 2px 5px rgba(255,255,255,0.3);
+        }
+
+        .pipe::before {
+            content: '';
+            position: absolute;
+            width: calc(100% + 12px);
+            height: 20px;
+            background: linear-gradient(to right, #2ecc71 0%, #27ae60 50%, #2ecc71 100%);
+            border: 3px solid #1e8449;
+            border-radius: 8px 8px 0 0;
+            top: -20px;
+            left: -9px;
+            box-shadow: inset 0 3px 8px rgba(255,255,255,0.4);
+        }
+
+        .pipe::after {
+            content: '';
+            position: absolute;
+            width: 60%;
+            height: 70%;
+            background: radial-gradient(circle, #000 30%, transparent 70%);
+            top: -15px;
+            left: 50%;
+            transform: translateX(-50%);
+            opacity: 0.5;
+        }
+
+        .cloud {
+            position: absolute;
+            width: 80px;
+            height: 30px;
+            background: white;
+            border-radius: 50px;
+            opacity: 0.9;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+
+        .cloud::before,
+        .cloud::after {
+            content: '';
+            position: absolute;
+            background: white;
+            border-radius: 50%;
+        }
+
+        .cloud::before {
+            width: 40px;
+            height: 40px;
+            top: -15px;
+            left: 15px;
+        }
+
+        .cloud::after {
+            width: 50px;
+            height: 35px;
+            top: -10px;
+            right: 10px;
+        }
+
+        .bush {
+            position: absolute;
+            width: 60px;
+            height: 25px;
+            background: #2ecc71;
+            border-radius: 50px;
+            bottom: 85px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+        }
+
+        .bush::before,
+        .bush::after {
+            content: '';
+            position: absolute;
+            background: #2ecc71;
+            border-radius: 50%;
+        }
+
+        .bush::before {
+            width: 30px;
+            height: 30px;
+            top: -10px;
+            left: 10px;
+        }
+
+        .bush::after {
+            width: 35px;
+            height: 28px;
+            top: -8px;
+            right: 8px;
+        }
+
+        .hill {
+            position: absolute;
+            width: 100px;
+            height: 50px;
+            background: #27ae60;
+            border-radius: 50% 50% 0 0;
+            bottom: 85px;
+            box-shadow: 0 -2px 10px rgba(0,0,0,0.1);
+        }
+
+        .mushroom {
+            position: absolute;
+            width: 28px;
+            height: 28px;
+            background: #e74c3c;
+            border-radius: 50% 50% 0 0;
+            border: 2px solid #c0392b;
+        }
+
+        .mushroom::before {
+            content: '';
+            position: absolute;
+            width: 8px;
+            height: 8px;
+            background: white;
+            border-radius: 50%;
+            top: 5px;
+            left: 4px;
+            box-shadow: 12px 0 0 white;
+        }
+
+        .mushroom::after {
+            content: '';
+            position: absolute;
+            width: 16px;
+            height: 14px;
+            background: #f4d03f;
+            bottom: -14px;
+            left: 50%;
+            transform: translateX(-50%);
+            border: 2px solid #d4ac0d;
+        }
+
+        .fire-flower {
+            position: absolute;
+            width: 28px;
+            height: 32px;
+            background: white;
+            border-radius: 50% 50% 0 0;
+            border: 2px solid #e67e22;
+        }
+
+        .fire-flower::before {
+            content: '';
+            position: absolute;
+            width: 16px;
+            height: 16px;
+            background: #e74c3c;
+            border-radius: 50%;
+            top: 2px;
+            left: 6px;
+            box-shadow: 0 0 10px rgba(231,76,60,0.6);
+        }
+
+        .fire-flower::after {
+            content: '';
+            position: absolute;
+            width: 4px;
+            height: 16px;
+            background: #27ae60;
+            bottom: -16px;
+            left: 50%;
+            transform: translateX(-50%);
+        }
+
+        .star-power {
+            position: absolute;
+            width: 28px;
+            height: 28px;
+            background: linear-gradient(45deg, #ffd700, #ff69b4, #00ffff, #ffd700);
+            background-size: 200% 200%;
+            animation: starShimmer 1s ease infinite;
+            clip-path: polygon(50% 0%, 61% 35%, 98% 35%, 68% 57%, 79% 91%, 50% 70%, 21% 91%, 32% 57%, 2% 35%, 39% 35%);
+            box-shadow: 0 0 15px rgba(255,215,0,0.8);
+        }
+
+        @keyframes starShimmer {
+            0%, 100% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+        }
+
+        .mario-fire {
+            filter: hue-rotate(30deg) brightness(1.1);
+        }
+
+        .mario-star {
+            animation: rainbowMario 0.3s linear infinite;
+        }
+
+        @keyframes rainbowMario {
+            0% { filter: hue-rotate(0deg) brightness(1.2); }
+            25% { filter: hue-rotate(90deg) brightness(1.2); }
+            50% { filter: hue-rotate(180deg) brightness(1.2); }
+            75% { filter: hue-rotate(270deg) brightness(1.2); }
+            100% { filter: hue-rotate(360deg) brightness(1.2); }
+        }
+
+        .fireball {
+            position: absolute;
+            width: 16px;
+            height: 16px;
+            background: radial-gradient(circle, #ff6b00, #ff0000);
+            border-radius: 50%;
+            border: 2px solid #ffd700;
+            box-shadow: 0 0 15px rgba(255,107,0,0.8);
+            animation: fireballSpin 0.5s linear infinite;
+        }
+
+        @keyframes fireballSpin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .fireball::after {
+            content: '';
+            position: absolute;
+            width: 8px;
+            height: 8px;
+            background: #ffff00;
+            border-radius: 50%;
+            top: 4px;
+            left: 4px;
+        }
+
+        #hud {
+            position: absolute;
+            top: 15px;
+            left: 0;
+            width: 100%;
+            display: flex;
+            justify-content: space-around;
+            color: white;
+            font-size: 14px;
+            text-shadow: 3px 3px 5px rgba(0,0,0,0.9);
+            z-index: 10;
+            padding: 0 20px;
+        }
+
+        #hud div {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        #hud .label {
+            font-size: 12px;
+            margin-bottom: 5px;
+            color: #ffd700;
+        }
+
+        #hud .value {
+            font-size: 16px;
+            font-weight: bold;
+        }
+
+        #gameOver, #levelComplete, #gameWin {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(0,0,0,0.95);
+            color: white;
+            padding: 50px 60px;
+            border-radius: 20px;
+            text-align: center;
+            display: none;
+            z-index: 9999;
+            border: 5px solid #ffd700;
+            box-shadow: 0 0 50px rgba(255,215,0,0.8);
+            max-width: 600px;
+            width: 90%;
+        }
+
+        #gameOver h2 {
+            font-size: 42px;
+            margin-bottom: 20px;
+            color: #e74c3c;
+            text-shadow: 4px 4px 8px rgba(0,0,0,0.8);
+        }
+
+        #levelComplete h2 {
+            font-size: 42px;
+            margin-bottom: 20px;
+            color: #2ecc71;
+            text-shadow: 4px 4px 8px rgba(0,0,0,0.8);
+        }
+
+        #gameWin h2 {
+            font-size: 46px;
+            margin-bottom: 20px;
+            color: #ffd700;
+            text-shadow: 4px 4px 8px rgba(0,0,0,0.8);
+        }
+
+        #gameOver p, #levelComplete p, #gameWin p {
+            font-size: 16px;
+            margin-bottom: 25px;
+            line-height: 2;
+        }
+
+        #gameOver button, #levelComplete button, #gameWin button {
+            padding: 15px 35px;
+            font-size: 14px;
+            background: #27ae60;
+            color: white;
+            border: 4px solid #1e8449;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-family: inherit;
+            margin: 8px;
+            font-weight: bold;
+        }
+
+        #gameOver button:hover, #levelComplete button:hover, #gameWin button:hover {
+            background: #229954;
+            transform: scale(1.05);
+        }
+
+        #startScreen {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            text-align: center;
+            color: white;
+            z-index: 9999;
+            background: rgba(0,0,0,0.95);
+            padding: 50px 60px;
+            border-radius: 20px;
+            border: 5px solid #ffd700;
+            box-shadow: 0 0 50px rgba(255,215,0,0.8);
+            max-width: 600px;
+            width: 90%;
+        }
+
+        #startScreen h1 {
+            font-size: 40px;
+            margin-bottom: 30px;
+            text-shadow: 4px 4px 8px rgba(0,0,0,0.8);
+            color: #ffd700;
+            animation: titlePulse 2s ease-in-out infinite;
+        }
+
+        @keyframes titlePulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+        }
+
+        #startScreen p {
+            font-size: 13px;
+            margin-bottom: 12px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.8);
+            line-height: 1.8;
+        }
+
+        #startScreen button {
+            padding: 20px 60px;
+            font-size: 20px;
+            background: linear-gradient(to bottom, #e74c3c, #c0392b);
+            color: white;
+            border: 4px solid #ffd700;
+            border-radius: 12px;
+            cursor: pointer;
+            margin-top: 30px;
+            transition: all 0.3s;
+            font-family: inherit;
+            font-weight: bold;
+            box-shadow: 0 5px 20px rgba(231,76,60,0.6);
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+        }
+
+        @keyframes buttonPulse {
+            0%, 100% { box-shadow: 0 0 10px rgba(231,76,60,0.5); }
+            50% { box-shadow: 0 0 25px rgba(231,76,60,0.8); }
+        }
+
+        #startScreen button:hover {
+            background: linear-gradient(to bottom, #c0392b, #a93226);
+            transform: scale(1.1);
+            box-shadow: 0 8px 30px rgba(231,76,60,0.8);
+        }
+
+        .flag {
+            position: absolute;
+            width: 8px;
+            height: 180px;
+            background: #333;
+            bottom: 85px;
+            right: 50px;
+            z-index: 4;
+        }
+
+        .flag::before {
+            content: '';
+            position: absolute;
+            width: 0;
+            height: 0;
+            border-style: solid;
+            border-width: 15px 0 15px 30px;
+            border-color: transparent transparent transparent #e74c3c;
+            top: 0;
+            left: 8px;
+        }
+
+        .flag::after {
+            content: '';
+            position: absolute;
+            width: 12px;
+            height: 12px;
+            background: #ffd700;
+            border-radius: 50%;
+            top: -6px;
+            left: -2px;
+        }
+
+        .castle {
+            position: absolute;
+            width: 100px;
+            height: 120px;
+            background: #7f8c8d;
+            bottom: 85px;
+            right: 100px;
+            border: 3px solid #34495e;
+        }
+
+        .castle::before {
+            content: '';
+            position: absolute;
+            width: 30px;
+            height: 30px;
+            background: #e74c3c;
+            top: -30px;
+            left: 50%;
+            transform: translateX(-50%);
+            border: 3px solid #c0392b;
+            border-radius: 50% 50% 0 0;
+        }
+
+        .castle::after {
+            content: '';
+            position: absolute;
+            width: 30px;
+            height: 50px;
+            background: #2c3e50;
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            border: 2px solid #000;
+            border-radius: 20px 20px 0 0;
+        }
+
+        .particle {
+            position: absolute;
+            width: 4px;
+            height: 4px;
+            background: #ffd700;
+            border-radius: 50%;
+            pointer-events: none;
+            animation: particleFade 0.5s ease-out forwards;
+        }
+
+        @keyframes particleFade {
+            0% { opacity: 1; transform: translate(0, 0) scale(1); }
+            100% { opacity: 0; transform: translate(var(--tx), var(--ty)) scale(0); }
+        }
+
+        .power-up-indicator {
+            position: absolute;
+            top: 60px;
+            left: 20px;
+            color: white;
+            font-size: 12px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.8);
+            z-index: 10;
+        }
+    </style>
+</head>
+<body>
+    <div id="gameContainer">
+        <div id="mario"></div>
+        <div class="ground"></div>
+        
+        <div id="hud">
+            <div>
+                <span class="label">MARIO</span>
+                <span class="value" id="scoreCount">000000</span>
+            </div>
+            <div>
+                <span class="label">COINS</span>
+                <span class="value">💰 <span id="coinCount">00</span></span>
+            </div>
+            <div>
+                <span class="label">WORLD</span>
+                <span class="value" id="worldCount">1-1</span>
+            </div>
+            <div>
+                <span class="label">TIME</span>
+                <span class="value" id="timeCount">400</span>
+            </div>
+            <div>
+                <span class="label">LIVES</span>
+                <span class="value">❤️ <span id="livesCount">3</span></span>
+            </div>
+        </div>
+
+        <div class="power-up-indicator" id="powerUpStatus"></div>
+
+        <div id="startScreen">
+            <h1>🍄 SUPER MARIO BROS 🍄</h1>
+            <p>━━━━━━━━━━━━━━━━━━━</p>
+            <p>USE ARROW KEYS OR WASD TO MOVE</p>
+            <p>SPACE OR W/↑ TO JUMP</p>
+            <p>PRESS X TO SHOOT FIREBALLS (when powered up)</p>
+            <p>━━━━━━━━━━━━━━━━━━━</p>
+            <p>COLLECT COINS 💰</p>
+            <p>🍄 MUSHROOM - Grow bigger & stronger!</p>
+            <p>🌸 FIRE FLOWER - Shoot fireballs!</p>
+            <p>⭐ STAR - Become invincible!</p>
+            <p>JUMP ON ENEMIES TO DEFEAT THEM</p>
+            <p>REACH THE FLAG TO COMPLETE LEVEL</p>
+            <p>━━━━━━━━━━━━━━━━━━━</p>
+            <p>5 EXCITING LEVELS TO CONQUER!</p>
+            <p>━━━━━━━━━━━━━━━━━━━</p>
+            <button onclick="startGame()">START GAME</button>
+        </div>
+
+        <div id="gameOver">
+            <h2>GAME OVER!</h2>
+            <p>SCORE: <span id="finalScore">0</span></p>
+            <p>COINS: <span id="finalCoins">0</span></p>
+            <p>LEVEL: <span id="finalLevel">1-1</span></p>
+            <button onclick="restartGame()">TRY AGAIN</button>
+            <button onclick="location.reload()">MAIN MENU</button>
+        </div>
+
+        <div id="levelComplete">
+            <h2>LEVEL COMPLETE!</h2>
+            <p>GREAT JOB! 🎉</p>
+            <p>SCORE: <span id="levelScore">0</span></p>
+            <p>COINS: <span id="levelCoins">0</span></p>
+            <p>TIME BONUS: <span id="timeBonus">0</span></p>
+            <button onclick="nextLevel()">NEXT LEVEL</button>
+        </div>
+
+        <div id="gameWin">
+            <h2>🎊 CONGRATULATIONS! 🎊</h2>
+            <p>YOU BEAT ALL 5 LEVELS!</p>
+            <p>FINAL SCORE: <span id="winScore">0</span></p>
+            <p>TOTAL COINS: <span id="winCoins">0</span></p>
+            <p>YOU'RE A SUPER MARIO MASTER! 🏆</p>
+            <button onclick="location.reload()">PLAY AGAIN</button>
+        </div>
+    </div>
+
+    <script>
+        const mario = document.getElementById('mario');
+        const gameContainer = document.getElementById('gameContainer');
+        const coinCountDisplay = document.getElementById('coinCount');
+        const scoreCountDisplay = document.getElementById('scoreCount');
+        const livesCountDisplay = document.getElementById('livesCount');
+        const timeCountDisplay = document.getElementById('timeCount');
+        const worldCountDisplay = document.getElementById('worldCount');
+        const powerUpStatusDisplay = document.getElementById('powerUpStatus');
+        const gameOverScreen = document.getElementById('gameOver');
+        const startScreen = document.getElementById('startScreen');
+        const levelCompleteScreen = document.getElementById('levelComplete');
+        const gameWinScreen = document.getElementById('gameWin');
+
+        let marioLeft = 50;
+        let marioBottom = 85;
+        let velocity = 0;
+        let gravity = 0.9;
+        let isJumping = false;
+        let gameActive = false;
+        let coins = 0;
+        let score = 0;
+        let lives = 3;
+        let currentLevel = 1;
+        let timeLeft = 400;
+        let keys = {};
+        let gameLoop;
+        let timeInterval;
+        let enemies = [];
+        let coinElements = [];
+        let platforms = [];
+        let powerUps = [];
+        let fireballs = [];
+        let moveSpeed = 4;
+        let isPoweredUp = false;
+        let hasFirePower = false;
+        let hasStarPower = false;
+        let invincible = false;
+        let invincibleTimer = null;
+        let starPowerTimer = null;
+
+        // Level configurations
+        const levels = {
+            1: {
+                name: "1-1",
+                time: 400,
+                theme: "grassland",
+                layout: () => createLevel1()
+            },
+            2: {
+                name: "1-2",
+                time: 400,
+                theme: "underground",
+                layout: () => createLevel2()
+            },
+            3: {
+                name: "1-3",
+                time: 400,
+                theme: "sky",
+                layout: () => createLevel3()
+            },
+            4: {
+                name: "1-4",
+                time: 400,
+                theme: "castle",
+                layout: () => createLevel4()
+            },
+            5: {
+                name: "2-1",
+                time: 400,
+                theme: "grassland",
+                layout: () => createLevel5()
+            }
+        };
+
+        function startGame() {
+            if (gameActive) return;
+            
+            startScreen.style.display = 'none';
+            gameOverScreen.style.display = 'none';
+            levelCompleteScreen.style.display = 'none';
+            gameWinScreen.style.display = 'none';
+            
+            gameActive = true;
+            coins = 0;
+            score = 0;
+            lives = 3;
+            currentLevel = 1;
+            marioLeft = 50;
+            marioBottom = 85;
+            velocity = 0;
+            isPoweredUp = false;
+            hasFirePower = false;
+            hasStarPower = false;
+            invincible = false;
+            fireballs = [];
+            
+            // Reset Mario appearance
+            mario.classList.remove('mario-super', 'mario-fire', 'mario-star');
+            mario.style.height = '40px';
+            powerUpStatusDisplay.textContent = '';
+            
+            loadLevel(currentLevel);
+            updateHUD();
+            
+            gameLoop = setInterval(update, 1000/60);
+            startTimer();
+        }
+
+        function loadLevel(levelNum) {
+            // Clear existing elements
+            clearLevel();
+            
+            const level = levels[levelNum];
+            timeLeft = level.time;
+            worldCountDisplay.textContent = level.name;
+            
+            // Apply theme
+            applyTheme(level.theme);
+            
+            // Create level layout
+            level.layout();
+            
+            marioLeft = 50;
+            marioBottom = 85;
+            velocity = 0;
+            isJumping = false;
+            mario.style.left = marioLeft + 'px';
+            mario.style.bottom = marioBottom + 'px';
+        }
+
+        function clearLevel() {
+            document.querySelectorAll('.platform, .brick, .coin, .enemy, .pipe, .cloud, .question-box, .flag, .castle, .bush, .hill, .mushroom').forEach(el => el.remove());
+            enemies = [];
+            coinElements = [];
+            platforms = [];
+            powerUps = [];
+        }
+
+        function applyTheme(theme) {
+            switch(theme) {
+                case "grassland":
+                    gameContainer.style.background = 'linear-gradient(to bottom, #5c94fc 0%, #5c94fc 82%, #c84c0c 82%, #c84c0c 100%)';
+                    break;
+                case "underground":
+                    gameContainer.style.background = 'linear-gradient(to bottom, #000 0%, #1a1a1a 82%, #2c2c2c 82%, #2c2c2c 100%)';
+                    break;
+                case "sky":
+                    gameContainer.style.background = 'linear-gradient(to bottom, #87ceeb 0%, #add8e6 82%, #90ee90 82%, #90ee90 100%)';
+                    break;
+                case "castle":
+                    gameContainer.style.background = 'linear-gradient(to bottom, #2c3e50 0%, #34495e 82%, #7f8c8d 82%, #7f8c8d 100%)';
+                    break;
+            }
+        }
+
+        function createLevel1() {
+            // Clouds
+            createCloud(80, 40);
+            createCloud(250, 60);
+            createCloud(420, 50);
+            createCloud(600, 70);
+
+            // Hills
+            createHill(100, 85);
+            createHill(400, 85);
+
+            // Bushes
+            createBush(150, 85);
+            createBush(450, 85);
+
+            // Platforms
+            createPlatform(200, 140, 80, 15);
+            createPlatform(320, 190, 80, 15);
+            createPlatform(500, 160, 100, 15);
+
+            // Bricks
+            createBrick(250, 240);
+            createBrick(282, 240);
+            createBrick(314, 240);
+            createBrick(346, 240);
+
+            // Question boxes with items
+            createQuestionBox(300, 240, 'coin');
+            createQuestionBox(332, 240, 'mushroom');
+            createQuestionBox(550, 220, 'fire-flower');
+
+            // Coins
+            createCoin(230, 170);
+            createCoin(260, 170);
+            createCoin(350, 220);
+            createCoin(380, 220);
+            createCoin(410, 220);
+            createCoin(530, 190);
+            createCoin(560, 190);
+            createCoin(590, 190);
+
+            // Pipes
+            createPipe(400, 50);
+            createPipe(600, 70);
+
+            // Enemies
+            createEnemy(280, 'goomba', 2);
+            createEnemy(450, 'goomba', 2);
+            createEnemy(580, 'koopa', 1.5);
+
+            // Flag at end
+            createFlag();
+        }
+
+        function createLevel2() {
+            // Underground level - darker theme
+            
+            // Platforms
+            createPlatform(150, 130, 100, 15);
+            createPlatform(300, 180, 80, 15);
+            createPlatform(420, 140, 90, 15);
+            createPlatform(550, 200, 100, 15);
+
+            // Bricks
+            for(let i = 0; i < 8; i++) {
+                createBrick(180 + i * 32, 220);
+            }
+
+            // Question boxes
+            createQuestionBox(200, 180, 'coin');
+            createQuestionBox(350, 230, 'fire-flower');
+            createQuestionBox(500, 190, 'star');
+            createQuestionBox(600, 250, 'coin');
+
+            // Coins
+            createCoin(180, 160);
+            createCoin(210, 160);
+            createCoin(330, 210);
+            createCoin(360, 210);
+            createCoin(450, 170);
+            createCoin(480, 170);
+            createCoin(580, 230);
+            createCoin(610, 230);
+            createCoin(640, 230);
+
+            // More enemies in underground
+            createEnemy(200, 'goomba', 2.5);
+            createEnemy(350, 'koopa', 2);
+            createEnemy(480, 'goomba', 2.5);
+            createEnemy(620, 'koopa', 2);
+
+            createFlag();
+        }
+
+        function createLevel3() {
+            // Sky level - high platforms
+            
+            // Clouds (part of platforms in sky)
+            createCloud(100, 120);
+            createCloud(280, 140);
+            createCloud(450, 160);
+            createCloud(620, 130);
+
+            // High platforms
+            createPlatform(180, 180, 100, 15);
+            createPlatform(320, 220, 90, 15);
+            createPlatform(450, 260, 100, 15);
+            createPlatform(600, 200, 110, 15);
+
+            // Floating bricks
+            createBrick(400, 300);
+            createBrick(432, 300);
+            createBrick(464, 300);
+
+            // Question boxes
+            createQuestionBox(230, 230, 'coin');
+            createQuestionBox(370, 270, 'fire-flower');
+            createQuestionBox(500, 310, 'star');
+            createQuestionBox(650, 250, 'coin');
+
+            // Coins in sky
+            createCoin(210, 210);
+            createCoin(240, 210);
+            createCoin(270, 210);
+            createCoin(350, 250);
+            createCoin(380, 250);
+            createCoin(410, 250);
+            createCoin(480, 290);
+            createCoin(510, 290);
+            createCoin(540, 290);
+            createCoin(630, 230);
+            createCoin(660, 230);
+
+            // Flying enemies (faster movement)
+            createEnemy(250, 'koopa', 3);
+            createEnemy(400, 'koopa', 3);
+            createEnemy(580, 'goomba', 3.5);
+
+            createFlag();
+        }
+
+        function createLevel4() {
+            // Castle level - challenging
+            
+            // Castle walls (platforms)
+            createPlatform(150, 140, 70, 15);
+            createPlatform(280, 180, 70, 15);
+            createPlatform(410, 220, 70, 15);
+            createPlatform(540, 180, 70, 15);
+            createPlatform(650, 140, 80, 15);
+
+            // Bricks
+            createBrick(230, 260);
+            createBrick(262, 260);
+            createBrick(360, 300);
+            createBrick(392, 300);
+            createBrick(424, 300);
+
+            // Question boxes
+            createQuestionBox(200, 190, 'mushroom');
+            createQuestionBox(330, 230, 'fire-flower');
+            createQuestionBox(460, 270, 'star');
+            createQuestionBox(590, 230, 'coin');
+
+            // Coins
+            createCoin(180, 170);
+            createCoin(210, 170);
+            createCoin(310, 210);
+            createCoin(340, 210);
+            createCoin(370, 210);
+            createCoin(440, 250);
+            createCoin(470, 250);
+            createCoin(570, 210);
+            createCoin(600, 210);
+            createCoin(680, 170);
+
+            // More challenging enemies
+            createEnemy(220, 'koopa', 2.5);
+            createEnemy(350, 'goomba', 3);
+            createEnemy(480, 'koopa', 2.5);
+            createEnemy(600, 'goomba', 3);
+            createEnemy(700, 'koopa', 2.5);
+
+            createFlag();
+            createCastle();
+        }
+
+        function createLevel5() {
+            // Final level - most challenging
+            
+            createCloud(70, 50);
+            createCloud(230, 70);
+            createCloud(400, 55);
+            createCloud(570, 65);
+
+            createHill(120, 85);
+            createHill(450, 85);
+
+            // Complex platform layout
+            createPlatform(160, 150, 90, 15);
+            createPlatform(290, 200, 80, 15);
+            createPlatform(410, 250, 90, 15);
+            createPlatform(540, 200, 80, 15);
+            createPlatform(650, 160, 100, 15);
+
+            // Many bricks
+            for(let i = 0; i < 6; i++) {
+                createBrick(220 + i * 32, 280);
+            }
+            createBrick(450, 320);
+            createBrick(482, 320);
+
+            // Question boxes
+            createQuestionBox(200, 200, 'coin');
+            createQuestionBox(250, 280, 'mushroom');
+            createQuestionBox(340, 250, 'fire-flower');
+            createQuestionBox(450, 300, 'star');
+            createQuestionBox(590, 250, 'fire-flower');
+            createQuestionBox(690, 210, 'coin');
+
+            // Many coins
+            createCoin(190, 180);
+            createCoin(220, 180);
+            createCoin(320, 230);
+            createCoin(350, 230);
+            createCoin(380, 230);
+            createCoin(440, 280);
+            createCoin(470, 280);
+            createCoin(500, 280);
+            createCoin(570, 230);
+            createCoin(600, 230);
+            createCoin(680, 190);
+            createCoin(710, 190);
+
+            // Pipes
+            createPipe(350, 60);
+            createPipe(520, 80);
+
+            // Many enemies - final challenge
+            createEnemy(230, 'goomba', 3);
+            createEnemy(320, 'koopa', 2.5);
+            createEnemy(420, 'goomba', 3);
+            createEnemy(520, 'koopa', 2.5);
+            createEnemy(620, 'goomba', 3);
+            createEnemy(700, 'koopa', 2.5);
+
+            createFlag();
+        }
+
+        function createCloud(left, top) {
+            const cloud = document.createElement('div');
+            cloud.className = 'cloud';
+            cloud.style.left = left + 'px';
+            cloud.style.top = top + 'px';
+            gameContainer.appendChild(cloud);
+        }
+
+        function createHill(left, bottom) {
+            const hill = document.createElement('div');
+            hill.className = 'hill';
+            hill.style.left = left + 'px';
+            hill.style.bottom = bottom + 'px';
+            gameContainer.appendChild(hill);
+        }
+
+        function createBush(left, bottom) {
+            const bush = document.createElement('div');
+            bush.className = 'bush';
+            bush.style.left = left + 'px';
+            bush.style.bottom = bottom + 'px';
+            gameContainer.appendChild(bush);
+        }
+
+        function createPlatform(left, bottom, width, height) {
+            const platform = document.createElement('div');
+            platform.className = 'platform';
+            platform.style.left = left + 'px';
+            platform.style.bottom = bottom + 'px';
+            platform.style.width = width + 'px';
+            platform.style.height = height + 'px';
+            gameContainer.appendChild(platform);
+            platforms.push({
+                left: left,
+                right: left + width,
+                bottom: bottom,
+                top: bottom + height,
+                element: platform
+            });
+        }
+
+        function createBrick(left, bottom) {
+            const brick = document.createElement('div');
+            brick.className = 'brick';
+            brick.style.left = left + 'px';
+            brick.style.bottom = bottom + 'px';
+            gameContainer.appendChild(brick);
+            platforms.push({
+                left: left,
+                right: left + 32,
+                bottom: bottom,
+                top: bottom + 32,
+                element: brick,
+                breakable: true
+            });
+        }
+
+        function createQuestionBox(left, bottom, itemType) {
+            const box = document.createElement('div');
+            box.className = 'question-box';
+            box.textContent = '?';
+            box.style.left = left + 'px';
+            box.style.bottom = bottom + 'px';
+            box.dataset.hasItem = 'true';
+            box.dataset.itemType = itemType;
+            gameContainer.appendChild(box);
+            platforms.push({
+                left: left,
+                right: left + 32,
+                bottom: bottom,
+                top: bottom + 32,
+                element: box,
+                isQuestionBox: true
+            });
+        }
+
+        function createCoin(left, bottom) {
+            const coin = document.createElement('div');
+            coin.className = 'coin';
+            coin.textContent = '$';
+            coin.style.left = left + 'px';
+            coin.style.bottom = bottom + 'px';
+            gameContainer.appendChild(coin);
+            coinElements.push({
+                element: coin,
+                left: left,
+                bottom: bottom,
+                collected: false
+            });
+        }
+
+        function createPipe(left, height) {
+            const pipe = document.createElement('div');
+            pipe.className = 'pipe';
+            pipe.style.left = left + 'px';
+            pipe.style.width = '50px';
+            pipe.style.height = height + 'px';
+            gameContainer.appendChild(pipe);
+            platforms.push({
+                left: left,
+                right: left + 50,
+                bottom: 85 + height,
+                top: 85 + height + 20,
+                element: pipe
+            });
+        }
+
+        function createEnemy(left, type, speed) {
+            const enemy = document.createElement('div');
+            enemy.className = `enemy ${type}`;
+            enemy.style.left = left + 'px';
+            gameContainer.appendChild(enemy);
+            enemies.push({
+                element: enemy,
+                left: left,
+                direction: 1,
+                speed: speed,
+                type: type
+            });
+        }
+
+        function createFlag() {
+            const flag = document.createElement('div');
+            flag.className = 'flag';
+            gameContainer.appendChild(flag);
+        }
+
+        function createCastle() {
+            const castle = document.createElement('div');
+            castle.className = 'castle';
+            gameContainer.appendChild(castle);
+        }
+
+        function spawnPowerUp(x, y, type) {
+            const powerUp = document.createElement('div');
+            
+            if (type === 'mushroom') {
+                powerUp.className = 'mushroom';
+            } else if (type === 'fire-flower') {
+                powerUp.className = 'fire-flower';
+            } else if (type === 'star') {
+                powerUp.className = 'star-power';
+            }
+            
+            powerUp.style.left = x + 'px';
+            powerUp.style.bottom = y + 'px';
+            powerUp.dataset.type = type;
+            gameContainer.appendChild(powerUp);
+            
+            powerUps.push({
+                element: powerUp,
+                left: x,
+                bottom: y,
+                direction: 1,
+                speed: type === 'star' ? 3 : 2,
+                type: type
+            });
+        }
+
+        function startTimer() {
+            timeInterval = setInterval(() => {
+                if (!gameActive) return;
+                timeLeft--;
+                timeCountDisplay.textContent = timeLeft;
+                
+                if (timeLeft <= 0) {
+                    loseLife();
+                }
+            }, 1000);
+        }
+
+        function update() {
+            if (!gameActive) return;
+
+            // Movement
+            if (keys['ArrowRight'] || keys['d'] || keys['D']) {
+                marioLeft += moveSpeed;
+                if (marioLeft > 750) marioLeft = 750;
+            }
+            if (keys['ArrowLeft'] || keys['a'] || keys['A']) {
+                marioLeft -= moveSpeed;
+                if (marioLeft < 0) marioLeft = 0;
+            }
+
+            // Always apply gravity
+            velocity += gravity;
+            marioBottom -= velocity;
+
+            const marioHeight = isPoweredUp ? 48 : 40;
+            
+            // Check if Mario should land on ground
+            if (marioBottom <= 85) {
+                marioBottom = 85;
+                velocity = 0;
+                isJumping = false;
+            } else {
+                // Check platform collisions - landing on top
+                let landed = false;
+                
+                platforms.forEach(platform => {
+                    // Only check landing if Mario is falling (positive velocity)
+                    if (velocity > 0) {
+                        // Check if Mario's feet are at or below platform top
+                        // and his body was above it in previous frame
+                        if (marioLeft + 32 > platform.left + 2 && 
+                            marioLeft < platform.right - 2 &&
+                            marioBottom <= platform.top && 
+                            marioBottom + velocity > platform.top - 5) {
+                            // Land on platform
+                            marioBottom = platform.top;
+                            velocity = 0;
+                            isJumping = false;
+                            landed = true;
+                        }
+                    }
+                    
+                    // Hit box from below (when jumping up into it)
+                    if (velocity < 0) {
+                        if (marioLeft + 32 > platform.left && 
+                            marioLeft < platform.right &&
+                            marioBottom + marioHeight >= platform.bottom && 
+                            marioBottom + marioHeight <= platform.top + 5) {
+                            
+                            // Hit the bottom of the platform
+                            velocity = 0;
+                            marioBottom = platform.bottom - marioHeight;
+                            
+                            // Hit question box
+                            if (platform.isQuestionBox && platform.element.dataset.hasItem === 'true') {
+                                hitQuestionBox(platform.element);
+                            }
+                            
+                            // Break brick if powered up
+                            if (platform.breakable && isPoweredUp) {
+                                breakBrick(platform);
+                            }
+                        }
+                    }
+                });
+                
+                // If not landed on anything and not on ground, keep falling
+                if (!landed && marioBottom > 85) {
+                    isJumping = true;
+                }
+            }
+
+            mario.style.left = marioLeft + 'px';
+            mario.style.bottom = marioBottom + 'px';
+
+            // Update enemies
+            enemies.forEach((enemy, index) => {
+                enemy.left += enemy.direction * enemy.speed;
+                
+                if (enemy.left <= 0 || enemy.left >= 750) {
+                    enemy.direction *= -1;
+                }
+                
+                enemy.element.style.left = enemy.left + 'px';
+
+                // Check collision with Mario
+                if (checkCollision(
+                    marioLeft, marioBottom, 32, marioHeight,
+                    enemy.left, 85, 32, 32
+                )) {
+                    if (invincible) {
+                        // Defeat enemy if invincible
+                        defeatEnemy(enemy, index);
+                    } else if (marioBottom > 85 + 15 && velocity > 5) {
+                        // Jump on enemy
+                        defeatEnemy(enemy, index);
+                        velocity = -12;
+                    } else {
+                        // Hit by enemy
+                        hitByEnemy();
+                    }
+                }
+            });
+
+            // Update power-ups
+            powerUps.forEach((powerUp, index) => {
+                powerUp.left += powerUp.direction * powerUp.speed;
+                
+                if (powerUp.left <= 0 || powerUp.left >= 750) {
+                    powerUp.direction *= -1;
+                }
+                
+                powerUp.element.style.left = powerUp.left + 'px';
+
+                // Check collision with Mario
+                if (checkCollision(
+                    marioLeft, marioBottom, 32, marioHeight,
+                    powerUp.left, powerUp.bottom, 28, 28
+                )) {
+                    collectPowerUp(powerUp, index);
+                }
+            });
+
+            // Collect coins
+            coinElements.forEach(coin => {
+                if (!coin.collected && checkCollision(
+                    marioLeft, marioBottom, 32, marioHeight,
+                    coin.left, coin.bottom, 20, 28
+                )) {
+                    collectCoin(coin);
+                }
+            });
+
+            // Update fireballs
+            fireballs.forEach((fireball, index) => {
+                fireball.left += fireball.speed;
+                fireball.bounceVelocity += 0.5;
+                fireball.bottom -= fireball.bounceVelocity;
+                
+                // Bounce off ground
+                if (fireball.bottom <= 85) {
+                    fireball.bottom = 85;
+                    fireball.bounceVelocity = -8;
+                }
+                
+                fireball.element.style.left = fireball.left + 'px';
+                fireball.element.style.bottom = fireball.bottom + 'px';
+                
+                // Remove if off screen
+                if (fireball.left > 800 || fireball.left < -20 || fireball.bottom > 500) {
+                    fireball.element.remove();
+                    fireballs.splice(index, 1);
+                    return;
+                }
+                
+                // Check collision with enemies
+                enemies.forEach((enemy, enemyIndex) => {
+                    if (checkCollision(
+                        fireball.left, fireball.bottom, 16, 16,
+                        enemy.left, 85, 32, 32
+                    )) {
+                        // Defeat enemy with fireball
+                        defeatEnemy(enemy, enemyIndex);
+                        fireball.element.remove();
+                        fireballs.splice(index, 1);
+                    }
+                });
+            });
+
+            // Check win condition (reach flag)
+            if (marioLeft >= 700) {
+                completeLevel();
+            }
+        }
+
+        function checkCollision(x1, y1, w1, h1, x2, y2, w2, h2) {
+            return x1 < x2 + w2 &&
+                   x1 + w1 > x2 &&
+                   y1 < y2 + h2 &&
+                   y1 + h1 > y2;
+        }
+
+        function shootFireball() {
+            if (!hasFirePower || !gameActive) return;
+            
+            const fireball = document.createElement('div');
+            fireball.className = 'fireball';
+            const marioHeight = isPoweredUp ? 48 : 40;
+            fireball.style.left = (marioLeft + 32) + 'px';
+            fireball.style.bottom = (marioBottom + marioHeight / 2) + 'px';
+            gameContainer.appendChild(fireball);
+            
+            fireballs.push({
+                element: fireball,
+                left: marioLeft + 32,
+                bottom: marioBottom + marioHeight / 2,
+                direction: 1,
+                speed: 8,
+                bounceVelocity: 0
+            });
+        }
+
+        function jump() {
+            if (!isJumping && gameActive) {
+                isJumping = true;
+                velocity = isPoweredUp ? -20 : -18;
+            }
+        }
+
+        function hitQuestionBox(box) {
+            box.dataset.hasItem = 'false';
+            box.textContent = '';
+            box.classList.add('used');
+            
+            const itemType = box.dataset.itemType;
+            const boxLeft = parseInt(box.style.left);
+            const boxBottom = parseInt(box.style.bottom);
+            
+            if (itemType === 'coin') {
+                collectCoinFromBox(boxLeft, boxBottom);
+            } else if (itemType === 'mushroom') {
+                spawnPowerUp(boxLeft, boxBottom + 35, 'mushroom');
+            }
+            
+            createParticles(boxLeft + 16, boxBottom + 16);
+        }
+
+        function breakBrick(platform) {
+            createParticles(platform.left + 16, platform.bottom + 16);
+            platform.element.remove();
+            platforms = platforms.filter(p => p !== platform);
+            score += 50;
+            updateHUD();
+        }
+
+        function collectCoin(coin) {
+            coin.element.remove();
+            coin.collected = true;
+            coins++;
+            score += 100;
+            updateHUD();
+            createParticles(coin.left + 10, coin.bottom + 14);
+        }
+
+        function collectCoinFromBox(x, y) {
+            coins++;
+            score += 100;
+            updateHUD();
+            createParticles(x + 16, y + 35);
+        }
+
+        function defeatEnemy(enemy, index) {
+            createParticles(enemy.left + 16, 100);
+            enemy.element.remove();
+            enemies.splice(index, 1);
+            score += 200;
+            updateHUD();
+        }
+
+        function collectPowerUp(powerUp, index) {
+            powerUp.element.remove();
+            powerUps.splice(index, 1);
+            
+            const type = powerUp.type;
+            
+            if (type === 'mushroom') {
+                // Super Mushroom - makes Mario bigger
+                if (!isPoweredUp) {
+                    isPoweredUp = true;
+                    mario.classList.add('mario-super');
+                    mario.style.height = '48px';
+                    powerUpStatusDisplay.textContent = '🍄 SUPER MARIO';
+                    score += 1000;
+                }
+            } else if (type === 'fire-flower') {
+                // Fire Flower - gives fire power
+                if (!isPoweredUp) {
+                    isPoweredUp = true;
+                    mario.classList.add('mario-super');
+                    mario.style.height = '48px';
+                }
+                hasFirePower = true;
+                mario.classList.remove('mario-star');
+                mario.classList.add('mario-fire');
+                powerUpStatusDisplay.textContent = '🔥 FIRE MARIO - Press X to shoot!';
+                score += 1000;
+            } else if (type === 'star') {
+                // Star Power - temporary invincibility with rainbow effect
+                hasStarPower = true;
+                invincible = true;
+                mario.classList.remove('mario-fire');
+                mario.classList.add('mario-star');
+                powerUpStatusDisplay.textContent = '⭐ INVINCIBLE!';
+                score += 1000;
+                
+                // Star power lasts 10 seconds
+                if (starPowerTimer) clearTimeout(starPowerTimer);
+                starPowerTimer = setTimeout(() => {
+                    hasStarPower = false;
+                    invincible = false;
+                    mario.classList.remove('mario-star');
+                    if (hasFirePower) {
+                        mario.classList.add('mario-fire');
+                        powerUpStatusDisplay.textContent = '🔥 FIRE MARIO - Press X to shoot!';
+                    } else if (isPoweredUp) {
+                        powerUpStatusDisplay.textContent = '🍄 SUPER MARIO';
+                    } else {
+                        powerUpStatusDisplay.textContent = '';
+                    }
+                }, 10000);
+            }
+            
+            updateHUD();
+            createParticles(powerUp.left + 14, powerUp.bottom + 14);
+        }
+
+        function hitByEnemy() {
+            if (invincible || hasStarPower) return;
+            
+            if (hasFirePower) {
+                // Lose fire power, stay super
+                hasFirePower = false;
+                mario.classList.remove('mario-fire');
+                powerUpStatusDisplay.textContent = '🍄 SUPER MARIO';
+                
+                // Temporary invincibility
+                invincible = true;
+                if (invincibleTimer) clearTimeout(invincibleTimer);
+                invincibleTimer = setTimeout(() => {
+                    invincible = false;
+                }, 2000);
+            } else if (isPoweredUp) {
+                // Lose super power, become small
+                isPoweredUp = false;
+                mario.classList.remove('mario-super');
+                mario.style.height = '40px';
+                powerUpStatusDisplay.textContent = '';
+                
+                // Temporary invincibility
+                invincible = true;
+                if (invincibleTimer) clearTimeout(invincibleTimer);
+                invincibleTimer = setTimeout(() => {
+                    invincible = false;
+                }, 2000);
+            } else {
+                // Lose a life
+                loseLife();
+            }
+        }
+
+        function loseLife() {
+            lives--;
+            updateHUD();
+            
+            if (lives <= 0) {
+                endGame();
+            } else {
+                // Reset position and powers
+                marioLeft = 50;
+                marioBottom = 85;
+                velocity = 0;
+                isJumping = false;
+                isPoweredUp = false;
+                hasFirePower = false;
+                hasStarPower = false;
+                mario.classList.remove('mario-super', 'mario-fire', 'mario-star');
+                mario.style.height = '40px';
+                powerUpStatusDisplay.textContent = '';
+                
+                // Clear all fireballs
+                fireballs.forEach(fb => fb.element.remove());
+                fireballs = [];
+                
+                invincible = true;
+                setTimeout(() => invincible = false, 2000);
+            }
+        }
+
+        function createParticles(x, y) {
+            for (let i = 0; i < 8; i++) {
+                const particle = document.createElement('div');
+                particle.className = 'particle';
+                particle.style.left = x + 'px';
+                particle.style.bottom = y + 'px';
+                
+                const angle = (Math.PI * 2 * i) / 8;
+                const distance = 30;
+                const tx = Math.cos(angle) * distance;
+                const ty = Math.sin(angle) * distance;
+                
+                particle.style.setProperty('--tx', tx + 'px');
+                particle.style.setProperty('--ty', ty + 'px');
+                
+                gameContainer.appendChild(particle);
+                setTimeout(() => particle.remove(), 500);
+            }
+        }
+
+        function updateHUD() {
+            coinCountDisplay.textContent = String(coins).padStart(2, '0');
+            scoreCountDisplay.textContent = String(score).padStart(6, '0');
+            livesCountDisplay.textContent = lives;
+        }
+
+        function completeLevel() {
+            gameActive = false;
+            clearInterval(gameLoop);
+            clearInterval(timeInterval);
+            
+            const timeBonus = timeLeft * 10;
+            score += timeBonus;
+            
+            document.getElementById('levelScore').textContent = score;
+            document.getElementById('levelCoins').textContent = coins;
+            document.getElementById('timeBonus').textContent = timeBonus;
+            
+            if (currentLevel >= 5) {
+                // Game won!
+                gameWinScreen.style.display = 'block';
+                document.getElementById('winScore').textContent = score;
+                document.getElementById('winCoins').textContent = coins;
+            } else {
+                levelCompleteScreen.style.display = 'block';
+            }
+        }
+
+        function nextLevel() {
+            currentLevel++;
+            levelCompleteScreen.style.display = 'none';
+            loadLevel(currentLevel);
+            gameActive = true;
+            gameLoop = setInterval(update, 1000/60);
+            startTimer();
+        }
+
+        function endGame() {
+            gameActive = false;
+            clearInterval(gameLoop);
+            clearInterval(timeInterval);
+            document.getElementById('finalScore').textContent = score;
+            document.getElementById('finalCoins').textContent = coins;
+            document.getElementById('finalLevel').textContent = levels[currentLevel].name;
+            gameOverScreen.style.display = 'block';
+        }
+
+        function restartGame() {
+            gameOverScreen.style.display = 'none';
+            currentLevel = 1;
+            startGame();
+        }
+
+        // Event listeners
+        document.addEventListener('keydown', (e) => {
+            keys[e.key] = true;
+            if (e.key === ' ' || e.key === 'ArrowUp' || e.key === 'w' || e.key === 'W') {
+                e.preventDefault();
+                jump();
+            }
+            if (e.key === 'x' || e.key === 'X') {
+                e.preventDefault();
+                shootFireball();
+            }
+        });
+
+        document.addEventListener('keyup', (e) => {
+            keys[e.key] = false;
+        });
+    </script>
+</body>
+</html>
